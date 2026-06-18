@@ -1513,14 +1513,57 @@ async function genRes(key){
     if(imgData.success){image=imgData.image||imgData.url;provider=imgData.provider||'AI';}
     text='**知识图解：**《'+topic+'》\n\n**画面描述：** '+imgPrompt+'\n\n**生成方式：** '+provider;
   }else if(key==='video'){
-    setLoadingStep('🎬 生成视频描述…',40);
+    setLoadingStep(' 生成视频描述…',40);
     const vp=await callAI('请用中文描述动画内容，40字内。','教育动画关于《'+topic+'》：',80);
-    setLoadingStep('🎬 视频生成中…',60);
+    setLoadingStep('🎬 视频任务提交中…',55);
     const vidResp=await fetch(API+'/video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:vp.trim()})});
     const vidData=await vidResp.json();
-    if(vidData.type==='frames')vidFrames=vidData.frames||[];
-    if(vidData.type==='video')vidUrl=vidData.url||'';
-    text='';
+    
+    if(vidData.success && vidData.task_id){
+      // 异步任务，需要轮询状态
+      setLoadingStep('🎬 视频生成中，请稍候…',65);
+      const taskId=vidData.task_id;
+      const provider=vidData.provider||'aliyun';
+      let attempts=0;
+      const maxAttempts=60; // 最多等待5分钟
+      
+      while(attempts<maxAttempts){
+        await new Promise(r=>setTimeout(r,5000)); // 每5秒轮询一次
+        attempts++;
+        
+        const statusResp=await fetch(API+`/video/status?task_id=${taskId}&provider=${provider}`);
+        const statusData=await statusResp.json();
+        
+        if(!statusData.success){
+          text='**视频生成失败：** '+statusData.error;
+          setLoadingStep(' 视频生成失败',100);
+          break;
+        }
+        if(statusData.status==='done'){
+          vidUrl=statusData.url||'';
+          provider=statusData.provider||provider;
+          setLoadingStep('✅ 视频生成完成',100);
+          break;
+        }else if(statusData.status==='failed'){
+          text='**视频生成失败：** '+statusData.error;
+          setLoadingStep('❌ 视频生成失败',100);
+          break;
+        }else{
+          const msg=statusData.message||statusData.status||'生成中';
+          setLoadingStep('🎬 '+msg+' ('+attempts+'/'+maxAttempts+')',65+Math.round(attempts/maxAttempts*30));
+        }
+      }
+      
+      if(attempts>=maxAttempts && !vidUrl){
+        text='**视频生成超时：** 任务已提交到后台，请稍后在"图片&视频生成"页面查看结果。任务ID: '+taskId;
+      }
+    }else if(vidData.type==='frames'){
+      vidFrames=vidData.frames||[];
+    }else if(vidData.type==='video'){
+      vidUrl=vidData.url||'';
+    }else{
+      text='**视频生成失败：** '+vidData.error||'未知错误';
+    }
   }
   
   setLoadingStep('✅ 完成',100);
@@ -1581,10 +1624,35 @@ async function batchGenerate(){
         const vp=await callAI('请用中文描述动画内容，40字内。','教育动画关于《'+topic+'》：',80);
         const vidResp=await fetch(API+'/video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:vp.trim()})});
         const vidData=await vidResp.json();
-        if(vidData.success&&vidData.task_id){
-          stepText.textContent='🎬 视频任务已提交（后台生成中，请稍后查看）';
-          vidUrl='';
-          provider=vidData.provider||'';
+        if(vidData.success && vidData.task_id){
+          // 批量生成时也轮询视频状态（最多等待2分钟）
+          const taskId=vidData.task_id;
+          const provider=vidData.provider||'aliyun';
+          let attempts=0;
+          const maxAttempts=24; // 2分钟
+          while(attempts<maxAttempts){
+            await new Promise(r=>setTimeout(r,5000));
+            attempts++;
+            const statusResp=await fetch(API+`/video/status?task_id=${taskId}&provider=${provider}`);
+            const statusData=await statusResp.json();
+            if(!statusData.success){
+              text='**视频生成失败：** '+statusData.error;
+              break;
+            }
+            if(statusData.status==='done'){
+              vidUrl=statusData.url||'';
+              provider=statusData.provider||provider;
+              break;
+            }else if(statusData.status==='failed'){
+              text='**视频生成失败：** '+statusData.error;
+              break;
+            }
+          }
+          if(!vidUrl && !text){
+            text='**视频任务已提交（后台生成中）** 任务ID: '+taskId;
+          }
+        }else if(vidData.error){
+          text='**视频生成失败：** '+vidData.error;
         }
       }else{
         text=await callAI(SYS[res.key],'为《'+topic+'》生成内容。'+modeStr+'。学生画像：'+profileStr,res.key==='doc'?3000:2000);
