@@ -1,0 +1,6 @@
+flask
+openai
+requests
+Pillow
+python-dotenv
+replicate
