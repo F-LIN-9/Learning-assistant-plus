@@ -3,7 +3,6 @@
     "deepseek_key": "",
     "deepseek_url": "https://api.deepseek.com/v1",
     "deepseek_model": "deepseek-chat",
-    "runway_key": "",
     "siliconflow_key": "",
     "replicate_key": "",
     "xfyun_key": "",

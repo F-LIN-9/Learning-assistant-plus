@@ -607,7 +607,7 @@ def save_resource(username, topic, res_type, content):
 DEFAULT_CONFIG = {
     "api": {
         "deepseek_key": "", "deepseek_url": "https://api.deepseek.com/v1", "deepseek_model": "deepseek-chat",
-        "runway_key": "", "siliconflow_key": "", "replicate_key": "", "xfyun_key": "",
+        "siliconflow_key": "", "replicate_key": "", "xfyun_key": "",
         "aliyun_video_key": "",
         "xfyun_ocr_appid": "4a0fea5e", "xfyun_ocr_apikey": "df4bb8dfd2bdbea762ff01763b00b5b4", "xfyun_ocr_secret": "MTA1NWVmMDNmMTJhZGMwN2ViZmExMmRk",
         "img_style": "educational diagram, clean modern illustration",
@@ -738,12 +738,10 @@ def api_test():
                 else:
                     result = {"ok":False,"msg":f"HTTP {r.status_code}"}
             except Exception as e: result = {"ok":False,"msg":str(e)[:100]}
-    elif api_type == "video_runway":
-        result = {"ok": bool(cfg["api"].get("runway_key")), "msg": "已配置" if cfg["api"].get("runway_key") else "未配置"}
     return jsonify(result)
 
 def _get_api_status(cfg):
-    return {"text": bool(cfg["api"].get("deepseek_key") or cfg["api"].get("xfyun_key")), "replicate": bool(cfg["api"].get("replicate_key")), "siliconflow": bool(cfg["api"].get("siliconflow_key")), "aliyun_video": bool(cfg["api"].get("aliyun_video_key")), "runway": bool(cfg["api"].get("runway_key"))}
+    return {"text": bool(cfg["api"].get("deepseek_key") or cfg["api"].get("xfyun_key")), "replicate": bool(cfg["api"].get("replicate_key")), "siliconflow": bool(cfg["api"].get("siliconflow_key")), "aliyun_video": bool(cfg["api"].get("aliyun_video_key"))}
 
 def _call_llm(cfg, system, user, max_t=2000):
     result = None
