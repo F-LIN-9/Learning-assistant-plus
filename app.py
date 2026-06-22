@@ -678,6 +678,17 @@ def api_get_config():
     if session.get("role")!="admin": return jsonify({"error":"Unauthorized"}),403
     cfg = load_config(); return jsonify({"api":cfg["api"],"api_status":_get_api_status(cfg),"users":cfg["users"],"stats":GEN_STATS})
 
+@app.route("/api/debug_env", methods=["GET"])
+def api_debug_env():
+    """调试接口：检查环境变量是否正确加载"""
+    if session.get("role")!="admin": return jsonify({"error":"Unauthorized"}),403
+    env_vars = ["DEEPSEEK_KEY", "SILICONFLOW_KEY", "REPLICATE_KEY", "XFYUN_KEY", "ALIYUN_VIDEO_KEY", "XFYUN_OCR_APPID", "XFYUN_OCR_APIKEY", "XFYUN_OCR_SECRET"]
+    result = {}
+    for var in env_vars:
+        val = os.environ.get(var, "")
+        result[var] = {"exists": bool(val), "length": len(val) if val else 0, "preview": val[:8] + "..." if val and len(val) > 8 else val}
+    return jsonify(result)
+
 @app.route("/api/config", methods=["POST"])
 def api_save_config():
     if session.get("role")!="admin": return jsonify({"error":"Unauthorized"}),403
