@@ -407,7 +407,7 @@ def load_config():
         cfg["api"].setdefault(k, v)
     
     # 优先从环境变量读取 API 密钥（安全方案）
-    # 注意：只有当 config.json 中没有配置时才使用环境变量
+    # 注意：环境变量优先级最高，覆盖 config.json
     env_mapping = {
         "deepseek_key": "DEEPSEEK_KEY",
         "siliconflow_key": "SILICONFLOW_KEY",
@@ -419,14 +419,14 @@ def load_config():
         "xfyun_ocr_secret": "XFYUN_OCR_SECRET",
     }
     for config_key, env_var in env_mapping.items():
-        # 只有 config.json 中没有配置时，才从环境变量读取
-        if not cfg["api"].get(config_key):
-            env_value = os.environ.get(env_var)
-            if env_value:
-                cfg["api"][config_key] = env_value
-                print(f"[Config] 从环境变量加载 {config_key}")
-        else:
+        env_value = os.environ.get(env_var)
+        if env_value:
+            cfg["api"][config_key] = env_value
+            print(f"[Config] 从环境变量加载 {config_key}")
+        elif cfg["api"].get(config_key):
             print(f"[Config] 使用 config.json 中的 {config_key}")
+        else:
+            print(f"[Config] {config_key} 未配置")
     
     _config_cache = cfg
     _config_mtime = os.path.getmtime(CONFIG_FILE)
