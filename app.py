@@ -673,10 +673,30 @@ def api_register():
 @app.route("/api/logout", methods=["POST"])
 def api_logout(): session.clear(); return jsonify({"success":True})
 
+def _inject_env_vars(cfg):
+    """强制注入环境变量到配置中（每次请求时调用）"""
+    env_mapping = {
+        "deepseek_key": "DEEPSEEK_KEY",
+        "siliconflow_key": "SILICONFLOW_KEY",
+        "replicate_key": "REPLICATE_KEY",
+        "xfyun_key": "XFYUN_KEY",
+        "aliyun_video_key": "ALIYUN_VIDEO_KEY",
+        "xfyun_ocr_appid": "XFYUN_OCR_APPID",
+        "xfyun_ocr_apikey": "XFYUN_OCR_APIKEY",
+        "xfyun_ocr_secret": "XFYUN_OCR_SECRET",
+    }
+    for config_key, env_var in env_mapping.items():
+        env_value = os.environ.get(env_var)
+        if env_value:
+            cfg["api"][config_key] = env_value
+    return cfg
+
 @app.route("/api/config", methods=["GET"])
 def api_get_config():
     if session.get("role")!="admin": return jsonify({"error":"Unauthorized"}),403
-    cfg = load_config(); return jsonify({"api":cfg["api"],"api_status":_get_api_status(cfg),"users":cfg["users"],"stats":GEN_STATS})
+    cfg = load_config()
+    cfg = _inject_env_vars(cfg)  # 强制注入环境变量
+    return jsonify({"api":cfg["api"],"api_status":_get_api_status(cfg),"users":cfg["users"],"stats":GEN_STATS})
 
 @app.route("/api/debug_env", methods=["GET"])
 def api_debug_env():
