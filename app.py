@@ -576,10 +576,48 @@ def safety_filter(text):
     if len(lines) > 10 and len(set(lines)) < len(lines) * 0.3: return "⚠️ 检测到重复内容，已过滤。"
     return text
 
+def retry_request(func, max_retries=3, backoff=1.0):
+    """带重试和退避的 HTTP 请求包装器"""
+    import time
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            result = func()
+            if result.status_code in [200, 201, 202]:
+                return result
+            if result.status_code == 429:  # 请求过于频繁，等待后重试
+                wait_time = backoff * (2 ** attempt)
+                print(f"[Retry] 429 Too Many Requests, waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            if result.status_code >= 500:  # 服务器错误，重试
+                wait_time = backoff * (2 ** attempt)
+                print(f"[Retry] Server error {result.status_code}, waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            return result  # 其他错误直接返回
+        except requests.exceptions.Timeout as e:
+            last_error = e
+            wait_time = backoff * (2 ** attempt)
+            print(f"[Retry] Timeout (attempt {attempt+1}/{max_retries}), waiting {wait_time}s...")
+            time.sleep(wait_time)
+        except requests.exceptions.ConnectionError as e:
+            last_error = e
+            wait_time = backoff * (2 ** attempt)
+            print(f"[Retry] Connection error (attempt {attempt+1}/{max_retries}), waiting {wait_time}s...")
+            time.sleep(wait_time)
+    raise last_error or Exception("Request failed after retries")
+
 def init_db():
     conn = sqlite3.connect(DB_FILE); c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users_data (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, data_type TEXT NOT NULL, data_key TEXT, data_value TEXT, topic TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     c.execute('''CREATE TABLE IF NOT EXISTS resources (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, topic TEXT NOT NULL, res_type TEXT NOT NULL, content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    # 添加索引优化查询性能
+    c.execute('CREATE INDEX IF NOT EXISTS idx_users_data_username ON users_data(username)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_users_data_type ON users_data(data_type)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_users_data_created ON users_data(created_at)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_resources_username ON resources(username)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_resources_created ON resources(created_at)')
     conn.commit(); conn.close()
 
 def save_user_data(username, data_type, data_key, data_value, topic=""):
@@ -2369,7 +2407,7 @@ def api_image():
         except Exception: pass
     sf_key = cfg["api"].get("siliconflow_key","")
     try:
-        sf_resp = requests.post("https://api.siliconflow.cn/v1/image/generations", headers={"Authorization":f"Bearer {sf_key}","Content-Type":"application/json"}, json={"model":"Tongyi-MAI/Z-Image-Turbo","prompt":full_prompt,"image_size":"1024x1024","batch_size":1,"num_inference_steps":1,"guidance_scale":1}, timeout=90)
+        sf_resp = retry_request(lambda: requests.post("https://api.siliconflow.cn/v1/image/generations", headers={"Authorization":f"Bearer {sf_key}","Content-Type":"application/json"}, json={"model":"Tongyi-MAI/Z-Image-Turbo","prompt":full_prompt,"image_size":"1024x1024","batch_size":1,"num_inference_steps":1,"guidance_scale":1}, timeout=90))
         if sf_resp.status_code==200:
             img_url = sf_resp.json().get("images",[{}])[0].get("url","")
             if img_url: GEN_STATS["images"]+=1; GEN_STATS["total"]+=1; return jsonify({"success":True,"url":img_url,"image":img_url,"provider":"SiliconFlow Z-Image","prompt":prompt})
@@ -2443,10 +2481,10 @@ def _submit_aliyun_video(prompt, data, api_key):
         }
         
         print(f"[Aliyun Video] Submitting: prompt={prompt[:50]}..., duration={duration}, size={size}")
-        r = requests.post(
+        r = retry_request(lambda: requests.post(
             "https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis",
             headers=headers, json=body, timeout=30
-        )
+        ))
         print(f"[Aliyun Video] Response: {r.status_code} {r.text[:300]}")
         
         if r.status_code == 200:
@@ -2485,7 +2523,7 @@ def _submit_siliconflow_video(prompt, data, sf_key):
             body = {"model": model, "prompt": prompt, "resolution": "720p"}
         
         print(f"[SF Video] Submitting: model={model}, prompt={prompt[:50]}...")
-        r = requests.post("https://api.siliconflow.cn/v1/video/submit", headers=headers, json=body, timeout=30)
+        r = retry_request(lambda: requests.post("https://api.siliconflow.cn/v1/video/submit", headers=headers, json=body, timeout=30))
         print(f"[SF Video] Response: {r.status_code} {r.text[:300]}")
         
         if r.status_code in [200, 201]:
@@ -2703,7 +2741,7 @@ def _xfyun_ocr(image_b64, cfg):
             url_with_auth = f"{url}?{urlencode(auth_params)}"
             headers = {"Content-Type": "application/json"}
             
-            resp = requests.post(url_with_auth, headers=headers, json=request_body, timeout=60)
+            resp = retry_request(lambda: requests.post(url_with_auth, headers=headers, json=request_body, timeout=60))
             print(f"[OCR] 讯飞OCR大模型响应: {resp.status_code}")
             
             if resp.status_code == 200:
