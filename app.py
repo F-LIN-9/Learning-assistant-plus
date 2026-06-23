@@ -396,7 +396,8 @@ def load_config():
     try:
         mtime = os.path.getmtime(CONFIG_FILE)
         if _config_cache is not None and mtime == _config_mtime:
-            return _config_cache
+            # 缓存命中时也要注入环境变量
+            return _inject_env_vars(_config_cache.copy())
     except OSError:
         pass
     if not os.path.exists(CONFIG_FILE):
