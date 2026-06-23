@@ -608,6 +608,26 @@ def retry_request(func, max_retries=3, backoff=1.0):
             time.sleep(wait_time)
     raise last_error or Exception("Request failed after retries")
 
+def validate_input(text, max_length=1000, allow_empty=False):
+    """验证用户输入"""
+    if not text and not allow_empty:
+        return False, "输入不能为空"
+    if text and len(text) > max_length:
+        return False, f"输入过长，请控制在{max_length}字以内"
+    # 检查危险字符
+    dangerous_patterns = ['<script', 'javascript:', 'onerror=', 'onload=']
+    if text and any(p in text.lower() for p in dangerous_patterns):
+        return False, "输入包含非法字符"
+    return True, ""
+
+def log_request(username, action, status="success", detail=""):
+    """记录请求日志（用于审计和调试）"""
+    try:
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] [{username}] {action} - {status} {detail}")
+    except:
+        pass
+
 def init_db():
     conn = sqlite3.connect(DB_FILE); c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users_data (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, data_type TEXT NOT NULL, data_key TEXT, data_value TEXT, topic TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
@@ -865,6 +885,12 @@ def api_chat_stream():
 def api_chat():
     if not session.get("logged_in"): return jsonify({"error":"Not logged in"}),403
     data = request.json or {}; system_prompt = data.get("system",""); user_message = data.get("message","")
+    
+    # 输入验证
+    valid, msg = validate_input(user_message, max_length=2000)
+    if not valid:
+        return jsonify({"error": msg}), 400
+    
     max_tokens = int(data.get("max_tokens",2000)); cfg = load_config()
     reply = _call_llm(cfg, system_prompt, user_message, max_tokens)
     # 后处理：为LaTeX代码添加$$包裹（交给KaTeX渲染，坏的LaTeX会显示原文）
@@ -1332,11 +1358,17 @@ def api_tutor_ask():
     topic = data.get("topic", "")
     context = data.get("context", "")  # 当前学习上下文
     
+    # 输入验证
+    valid, msg = validate_input(question, max_length=2000)
+    if not valid:
+        return jsonify({"error": msg}), 400
+    
     if not question:
         return jsonify({"error": "请输入问题"}), 400
     
     cfg = load_config()
     username = session.get("username", "")
+    log_request(username, "tutor_ask", "success", f"topic={topic}")
     
     # 获取学生画像
     profile = get_user_profile(username)

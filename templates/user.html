@@ -2441,9 +2441,14 @@ async function sendTutor(){
     }
   }catch(e){
     // 回退到普通模式
-    const reply=await callAI('你是TutorAgent。学生画像：'+JSON.stringify(S.profile)+'。当前主题：'+S.currentTopic+'。请用清晰的文字解释，使用Markdown格式。',text,1500);
-    S.tutorHistory[S.tutorHistory.length-1].content=reply;
-    renderTutorChat();
+    try{
+      const reply=await callAI('你是TutorAgent。学生画像：'+JSON.stringify(S.profile)+'。当前主题：'+S.currentTopic+'。请用清晰的文字解释，使用Markdown格式。',text,1500);
+      S.tutorHistory[S.tutorHistory.length-1].content=reply;
+      renderTutorChat();
+    }catch(e2){
+      S.tutorHistory[S.tutorHistory.length-1].content='❌ 回答失败，请检查网络连接后重试';
+      renderTutorChat();
+    }
   }
   
   btn.disabled=false;
