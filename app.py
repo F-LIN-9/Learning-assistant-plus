@@ -628,12 +628,6 @@ DEFAULT_CONFIG = {
     "users": [{"username": "user1", "password": "123456"}],
 }
 
-def load_config():
-    if not os.path.exists(CONFIG_FILE): save_config(DEFAULT_CONFIG)
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f: cfg = json.load(f)
-    for k, v in DEFAULT_CONFIG["api"].items(): cfg["api"].setdefault(k, v)
-    return cfg
-
 def save_config(cfg):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f: json.dump(cfg, f, indent=2, ensure_ascii=False)
     clear_config_cache()
