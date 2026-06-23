@@ -255,6 +255,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="s-item" data-page="learn" onclick="nav('learn')"><span class="icon">⚡</span> 资源生成</div>
     <div class="s-item" data-page="path" onclick="nav('path')"><span class="icon">🗺️</span> 学习路径</div>
     <div class="s-item" data-page="eval" onclick="nav('eval')"><span class="icon">📊</span> 学习评估</div>
+    <div class="s-item" data-page="history" onclick="nav('history')"><span class="icon">📜</span> 学习历史</div>
   </div>
   <div class="s-foot">
     <div class="s-user"><div class="s-avatar" id="s-avatar">U</div><div class="s-uname" id="s-uname">用户</div></div>
@@ -563,9 +564,22 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 <!-- 学习评估 -->
 <div class="page" id="page-eval">
-  <div class="ph"><div class="ph-title">学习效果评估</div><div class="ph-sub">EvalAgent 从 5 个维度评估学习状态并给出改进建议</div><div class="agent-row"><span class="a-tag on">📊 EvalAgent</span></div></div>
+  <div class="ph"><div class="ph-title">学习效果评估</div><div class="ph-sub">EvalAgent 从 5 个维度评估学习状态并给出改进建议</div><div class="agent-row"><span class="a-tag on"> EvalAgent</span></div></div>
   <div id="eval-content"><div class="placeholder"><div class="p-icon">📊</div>点击开始评估</div></div>
   <button class="btn btn-green mt2" id="eval-btn" onclick="runEval()">📊 开始评估</button>
+</div>
+
+<!-- 学习历史 -->
+<div class="page" id="page-history">
+  <div class="ph"><div class="ph-title">学习历史</div><div class="ph-sub">查看你的学习记录，包括拍照搜题、智能答疑、资源生成等</div></div>
+  <div class="history-tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-sm btn-blue" onclick="showHistoryTab('all')" id="htab-all">全部</button>
+    <button class="btn btn-sm btn-outline" onclick="showHistoryTab('ocr')" id="htab-ocr"> 拍照搜题</button>
+    <button class="btn btn-sm btn-outline" onclick="showHistoryTab('tutor')" id="htab-tutor">💬 智能答疑</button>
+    <button class="btn btn-sm btn-outline" onclick="showHistoryTab('resources')" id="htab-resources"> 资源生成</button>
+    <button class="btn btn-sm btn-outline" onclick="showHistoryTab('evaluations')" id="htab-evaluations">📊 学习评估</button>
+  </div>
+  <div id="history-content"><div class="placeholder"><div class="p-icon">📜</div>加载中…</div></div>
 </div>
 
 </div>
@@ -719,6 +733,7 @@ function nav(page){
   if(page==='learn')initLearn();
   if(page==='tutor')initTutor();
   if(page==='ocr')initOCR();
+  if(page==='history')loadHistory();
 }
 
 function initProfilePage(){
@@ -2504,6 +2519,19 @@ async function runEval(){
     btn.innerHTML='🔄 重新评估';
   }
 }
+
+// ── 学习历史 ──
+let historyData={ocr:[],tutor:[],resources:[],evaluations:[]};
+async function loadHistory(){try{const r=await fetch(API+'/history');const d=await r.json();if(d.success){historyData=d;showHistoryTab('all');}}catch(e){document.getElementById('history-content').innerHTML='<div class="placeholder"><div class="p-icon">⚠️</div>加载失败</div>';}}
+function showHistoryTab(tab){document.querySelectorAll('.history-tabs .btn').forEach(b=>{b.className='btn btn-sm btn-outline';});const activeBtn=document.getElementById('htab-'+tab);if(activeBtn)activeBtn.className='btn btn-sm btn-blue';
+let html='';
+if(tab==='all'||tab==='ocr'){html+=renderHistorySection(' 拍照搜题',historyData.ocr.map(r=>({icon:'📷',title:'搜题：'+(r.data.question||'').substring(0,50)+'…',desc:r.data.answer?r.data.answer.substring(0,100)+'…':'',time:r.time,type:'ocr'})));}
+if(tab==='all'||tab==='tutor'){html+=renderHistorySection('💬 智能答疑',historyData.tutor.map(r=>({icon:'',title:'提问：'+(r.data.question||'').substring(0,50)+'…',desc:r.data.answer?r.data.answer.substring(0,100)+'…':'',time:r.time,type:'tutor'})));}
+if(tab==='all'||tab==='resources'){html+=renderHistorySection(' 资源生成',historyData.resources.map(r=>({icon:'📚',title:r.topic+' — '+r.type,desc:Object.keys(r.content||{}).join(', '),time:r.time,type:'resource'})));}
+if(tab==='all'||tab==='evaluations'){html+=renderHistorySection('📊 学习评估',historyData.evaluations.map(r=>({icon:'📊',title:'综合评分：'+((r.data.overall||0)*100).toFixed(0)+'分',desc:(r.data.suggestions||[]).slice(0,2).join('；'),time:r.time,type:'eval'})));}
+if(!html)html='<div class="placeholder"><div class="p-icon">📭</div>暂无记录</div>';
+document.getElementById('history-content').innerHTML=html;}
+function renderHistorySection(title,items){if(!items.length)return '';return `<div class="form-block" style="margin-bottom:12px"><div class="form-block-title">${title}（${items.length}条）</div>`+items.map(it=>`<div style="padding:8px 0;border-bottom:1px solid var(--b1);display:flex;gap:10px;align-items:flex-start"><div style="font-size:20px;flex-shrink:0">${it.icon}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px;word-break:break-all">${it.title}</div><div style="font-size:12px;color:var(--t3);word-break:break-all">${it.desc}</div><div style="font-size:11px;color:var(--t3);margin-top:4px">${it.time}</div></div></div>`).join('')+`</div>`;}
 
 // ── AI调用 ──
 async function callAI(system,user,messages,maxT=2000){const body={system,max_tokens:maxT};if(messages&&Array.isArray(messages))body.messages=messages;else body.message=user||'';try{const r=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();return d.reply||'';}catch(e){return '';}}

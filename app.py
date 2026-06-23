@@ -1088,6 +1088,38 @@ def api_user_load():
             except: result[dtype][key] = value
     return jsonify({"success":True,"data":result})
 
+@app.route("/api/history", methods=["GET"])
+def api_history():
+    """获取用户学习历史记录"""
+    if not session.get("logged_in"): return jsonify({"error":"Not logged in"}),403
+    username = session.get("username","")
+    conn = sqlite3.connect(DB_FILE); c = conn.cursor()
+    
+    # OCR记录
+    c.execute("SELECT data_value, created_at FROM users_data WHERE username=? AND data_type='ocr' ORDER BY created_at DESC LIMIT 50", (username,))
+    ocr_records = [{"data": json.loads(r[0]), "time": r[1]} for r in c.fetchall()]
+    
+    # 智能答疑记录
+    c.execute("SELECT data_value, created_at FROM users_data WHERE username=? AND data_type='tutor' ORDER BY created_at DESC LIMIT 50", (username,))
+    tutor_records = [{"data": json.loads(r[0]), "time": r[1]} for r in c.fetchall()]
+    
+    # 资源生成记录
+    c.execute("SELECT topic, res_type, content, created_at FROM resources WHERE username=? ORDER BY created_at DESC LIMIT 50", (username,))
+    resource_records = [{"topic": r[0], "type": r[1], "content": json.loads(r[2]) if r[2] else {}, "time": r[3]} for r in c.fetchall()]
+    
+    # 学习评估记录
+    c.execute("SELECT data_value, created_at FROM users_data WHERE username=? AND data_type='eval' ORDER BY created_at DESC LIMIT 20", (username,))
+    eval_records = [{"data": json.loads(r[0]), "time": r[1]} for r in c.fetchall()]
+    
+    conn.close()
+    return jsonify({
+        "success": True,
+        "ocr": ocr_records,
+        "tutor": tutor_records,
+        "resources": resource_records,
+        "evaluations": eval_records
+    })
+
 @app.route("/api/resource/save", methods=["POST"])
 def api_resource_save():
     if not session.get("logged_in"): return jsonify({"error":"Not logged in"}),403
@@ -2611,6 +2643,8 @@ def api_ocr():
             answer = _call_llm(cfg, "你是数学老师，请用Markdown格式解答数学题。", f"题目：{ai_question}\n请给出详细解答步骤。", 1500)
             # 后处理：为LaTeX代码添加$$包裹（交给KaTeX渲染，坏的LaTeX会显示原文）
             answer = fix_latex_formatting(answer)
+            # 保存OCR记录
+            save_user_data(session.get("username",""), "ocr", "search", {"question": result, "answer": answer, "provider": "讯飞OCR"})
             GEN_STATS["ocr"]+=1; GEN_STATS["total"]+=1
             return jsonify({"success":True,"question":result,"answer":answer,"provider":"讯飞OCR"})
         else:
