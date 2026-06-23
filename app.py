@@ -418,15 +418,26 @@ def load_config():
         "xfyun_ocr_apikey": "XFYUN_OCR_APIKEY",
         "xfyun_ocr_secret": "XFYUN_OCR_SECRET",
     }
+    env_vars_loaded = False
     for config_key, env_var in env_mapping.items():
         env_value = os.environ.get(env_var)
         if env_value:
             cfg["api"][config_key] = env_value
+            env_vars_loaded = True
             print(f"[Config] 从环境变量加载 {config_key}")
         elif cfg["api"].get(config_key):
             print(f"[Config] 使用 config.json 中的 {config_key}")
         else:
             print(f"[Config] {config_key} 未配置")
+    
+    # 如果从环境变量加载了密钥，自动保存到 config.json（持久化）
+    if env_vars_loaded:
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=2, ensure_ascii=False)
+            print("[Config] 已将环境变量中的密钥保存到 config.json")
+        except Exception as e:
+            print(f"[Config] 保存 config.json 失败: {e}")
     
     _config_cache = cfg
     _config_mtime = os.path.getmtime(CONFIG_FILE)
