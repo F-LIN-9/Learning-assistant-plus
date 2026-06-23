@@ -1,6 +1,5 @@
-flask
-openai
-requests
-Pillow
-python-dotenv
-replicate
+flask>=2.3.0
+openai>=1.0.0
+requests>=2.31.0
+Pillow>=10.0.0
+replicate>=0.22.0
