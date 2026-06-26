@@ -9,6 +9,10 @@ import json, os, urllib.parse, requests, base64, time, uuid, sqlite3, re, hashli
 from email.utils import formatdate
 from urllib.parse import urlencode
 from openai import OpenAI
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "multi-agent-learning-2025-secure")
@@ -962,13 +966,148 @@ def api_resource_generate_with_orchestrator():
         
         # 步骤4: 目标Agent执行
         system_prompts = {
-            "doc": "你是 CourseDocAgent，撰写课程讲解文档。Markdown格式，含学习目标、核心概念（含举例）、详细讲解、常见误区、本章小结。所有数学公式必须使用LaTeX格式并用$$或$包裹。",
-            "map": "你是 MindMapAgent，构建知识结构图。Markdown层级标题至少4层，🔥重点 ⚠️易错 💡拓展。所有数学公式必须使用LaTeX格式。",
-            "quiz": "你是 QuizAgent，设计梯度练习题。5道题（选择2、填空1、简答1、编程1），含详细解析和易错提醒。所有数学公式必须使用LaTeX格式。",
-            "code": "你是 CodeAgent，编写代码教学案例，由简到难2-3个，含注释、步骤、预期输出。",
-            "read": "你是 ReadingAgent，推荐5项拓展资源，含类型、简介、推荐指数、适合阶段。Markdown表格格式。",
-            "img": "你是 ImageAgent，描述教学插图内容，60字内。",
-            "video": "你是 VideoAgent，描述教学视频内容，40字内。"
+            "doc": """你是 CourseDocAgent（课程文档生成专家），负责撰写高质量课程讲解文档。
+
+【严格要求】
+1. 文档结构必须完整，包含以下部分：
+   - 📋 学习目标（3-5个具体可衡量的目标）
+   - 🎯 核心概念（每个概念必须包含：定义、举例、应用场景）
+   - 📖 详细讲解（分章节，每章包含：理论讲解+案例分析+图示说明）
+   - ⚠️ 常见误区（至少3个，每个包含：错误表现+正确理解+记忆技巧）
+   - 📝 本章小结（知识点回顾+重点强调+学习建议）
+   - 💡 拓展思考（2-3个开放性问题）
+
+2. 内容质量要求：
+   - 语言通俗易懂，避免生硬术语，必要时提供白话解释
+   - 每个重要概念必须配1-2个生活化举例
+   - 使用Markdown格式：标题用#，重点用**加粗**，代码用```包裹
+   - 所有数学公式必须使用LaTeX格式，行内公式用$包裹，独立公式用$$包裹
+   - 适当使用表格对比知识点
+   - 内容详实，总字数不少于2000字
+
+3. 教学原则：
+   - 由浅入深，循序渐进
+   - 理论联系实际
+   - 强调易错点和考试重点""",
+            
+            "map": """你是 MindMapAgent（知识结构图生成专家），负责构建清晰的知识结构图。
+
+【严格要求】
+1. 使用Markdown层级标题，至少4层深度（# → ## → ### → ####）
+2. 标记系统：
+   - 🔥 表示重点考点
+   - ⚠️ 表示易错点
+   - 💡 表示拓展知识
+   - 📌 表示核心概念
+3. 结构要求：
+   - 顶层：主题名称
+   - 第二层：主要知识模块（3-5个）
+   - 第三层：每个模块的核心知识点
+   - 第四层：具体概念、公式、定理等
+4. 所有数学公式必须使用LaTeX格式
+5. 在关键节点添加知识点之间的关联说明
+6. 内容详实，层次分明，便于复习""",
+            
+            "quiz": """你是 QuizAgent（练习题设计专家），负责设计梯度合理的练习题。
+
+【严格要求】
+1. 题目配置（共5-8题）：
+   - 选择题：2-3题（含4个选项，标注正确答案）
+   - 填空题：1-2题
+   - 简答题：1-2题
+   - 应用题/编程题：1题（综合应用）
+
+2. 每题必须包含：
+   - 题目内容（清晰明确）
+   - 难度等级：⭐简单 ⭐⭐中等 ⭐⭐⭐困难
+   - 考查知识点
+   - 详细解析（解题思路+步骤+答案）
+   - 易错提醒（指出常见错误）
+
+3. 题目设计原则：
+   - 难度梯度：由易到难
+   - 覆盖全面：涵盖主题的主要知识点
+   - 贴近实际：结合生活场景或考试真题风格
+   - 所有数学公式必须使用LaTeX格式
+
+4. 在最后添加"学习建议"部分，根据题目难度给出学习指导""",
+            
+            "code": """你是 CodeAgent（代码教学专家），负责编写由浅入深的代码案例。
+
+【严格要求】
+1. 案例配置（2-3个案例，由简到难）：
+   - 案例1：基础入门（核心语法/概念演示）
+   - 案例2：进阶应用（综合多个知识点）
+   - 案例3（可选）：实战项目（完整小项目）
+
+2. 每个案例必须包含：
+   - 📋 案例说明（目标、应用场景）
+   - 💻 完整代码（可运行，带详细中文注释）
+   - 📝 代码步骤解析（逐段解释）
+   - 📤 预期输出（运行结果示例）
+   - 💡 关键知识点提炼
+   - ⚠️ 常见错误及解决方法
+
+3. 代码规范：
+   - 使用Markdown代码块，标注语言
+   - 变量命名规范，注释清晰
+   - 代码风格符合语言最佳实践
+   - 避免过于复杂的写法，教学优先""",
+            
+            "read": """你是 ReadingAgent（拓展阅读推荐专家），负责推荐高质量学习资源。
+
+【严格要求】
+1. 推荐5-8项拓展资源，使用Markdown表格格式：
+   | 序号 | 资源名称 | 类型 | 简介 | 推荐指数 | 适合阶段 | 链接/获取方式 |
+
+2. 资源类型多样化：
+   - 📚 书籍（教材、参考书）
+   - 🎥 视频（B站、Coursera、YouTube等）
+   - 📄 论文/文章
+   - 🌐 网站/在线课程
+   - 🛠️ 工具/软件
+
+3. 每项资源必须包含：
+   - 资源名称（准确完整）
+   - 类型标注
+   - 100字左右的详细简介
+   - 推荐指数：⭐⭐⭐⭐⭐（1-5星）
+   - 适合阶段：入门/进阶/高级
+   - 获取方式或链接
+
+4. 推荐理由：在最后添加"为什么推荐这些资源"的说明""",
+            
+            "img": """你是 ImageAgent（教学插图设计专家），负责描述知识图解的视觉内容。
+
+【严格要求】
+1. 用60-100字详细描述插图内容
+2. 描述必须包含：
+   - 画面主体（核心元素）
+   - 布局构图（元素位置关系）
+   - 色彩风格（色调、对比）
+   - 文字标注（需要显示的文字）
+   - 教学目的（帮助理解什么概念）
+3. 风格要求：
+   - 简洁明了，重点突出
+   - 适合教学场景
+   - 避免过于复杂或抽象
+4. 输出纯文本描述，用于AI绘图生成""",
+            
+            "video": """你是 VideoAgent（教学视频设计专家），负责描述教学视频内容。
+
+【严格要求】
+1. 用40-80字详细描述视频内容
+2. 描述必须包含：
+   - 视频主题和场景
+   - 画面内容（动态过程）
+   - 旁白/字幕内容要点
+   - 视频时长建议
+   - 教学目标
+3. 风格要求：
+   - 生动形象，易于理解
+   - 适合在线学习
+   - 节奏适中，重点突出
+4. 输出纯文本描述，用于AI视频生成"""
         }
         
         system_prompt = system_prompts.get(target_agent, f"你是{target_agent}，生成{res_type}资源。")
@@ -980,7 +1119,17 @@ def api_resource_generate_with_orchestrator():
         yield f"data: {json.dumps({'type': 'orchestrator_event', 'event': orchestrator.get_session_events(session_id)[-1]}, ensure_ascii=False)}\n\n"
         
         # 调用AI生成
-        reply = _call_llm(cfg, system_prompt, user_message, 3000 if res_type == "doc" else 2000)
+        max_tokens_map = {
+            "doc": 4000,
+            "map": 3000,
+            "quiz": 3500,
+            "code": 3500,
+            "read": 2500,
+            "img": 500,
+            "video": 500
+        }
+        max_tokens = max_tokens_map.get(res_type, 2000)
+        reply = _call_llm(cfg, system_prompt, user_message, max_tokens)
         reply = fix_latex_formatting(reply)
         
         # ★ 新增：通过消息总线发布内容（Agent间通信）
@@ -1204,6 +1353,263 @@ def api_resource_load():
         try: result[topic][res_type] = json.loads(content)
         except: result[topic][res_type] = {"text": content, "image": "", "imgPrompt": "", "vidFrames": [], "vidUrl": "", "provider": ""}
     return jsonify({"success":True,"data":result})
+
+@app.route("/api/resource/download_word", methods=["POST"])
+def api_resource_download_word():
+    """下载Word文档（.docx格式，带格式排版）"""
+    if not session.get("logged_in"): return jsonify({"error":"Not logged in"}),403
+    data = request.json or {}
+    topic = data.get("topic","")
+    res_type = data.get("res_type","")  # 要导出的资源类型
+    
+    if not topic or not res_type:
+        return jsonify({"error":"缺少主题或资源类型"}),400
+    
+    # 从数据库读取资源
+    conn = sqlite3.connect(DB_FILE); c = conn.cursor()
+    c.execute("SELECT content FROM resources WHERE username=? AND topic=? AND res_type=?", 
+              (session.get("username",""), topic, res_type))
+    row = c.fetchone(); conn.close()
+    
+    if not row:
+        return jsonify({"error":"未找到该资源"}),404
+    
+    try:
+        content_data = json.loads(row[0])
+        text_content = content_data.get("text", "")
+    except:
+        text_content = row[0]
+    
+    if not text_content:
+        return jsonify({"error":"资源内容为空"}),400
+    
+    # 创建Word文档
+    doc = Document()
+    
+    # 设置默认字体
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = '微软雅黑'
+    font.size = Pt(12)
+    font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+    style.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+    
+    # 设置段落间距
+    style.paragraph_format.space_after = Pt(6)
+    style.paragraph_format.line_spacing = 1.5
+    
+    # 解析Markdown内容并转换为Word格式
+    lines = text_content.split('\n')
+    current_heading_level = 0
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # 跳过空行
+        if not line:
+            i += 1
+            continue
+        
+        # 标题处理 (# ## ### ####)
+        heading_match = re.match(r'^(#{1,6})\s+(.+)', line)
+        if heading_match:
+            level = len(heading_match.group(1))
+            title_text = heading_match.group(2).strip()
+            
+            # 移除emoji用于标题
+            clean_title = re.sub(r'[\U0001F300-\U0001F9FF]', '', title_text).strip()
+            
+            p = doc.add_heading(clean_title if clean_title else title_text, level=min(level, 4))
+            # 设置标题字体
+            for run in p.runs:
+                run.font.name = '微软雅黑'
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                if level == 1:
+                    run.font.size = Pt(22)
+                    run.font.color.rgb = RGBColor(0x2C, 0x3E, 0x50)
+                elif level == 2:
+                    run.font.size = Pt(18)
+                    run.font.color.rgb = RGBColor(0x34, 0x49, 0x5E)
+                elif level == 3:
+                    run.font.size = Pt(15)
+                    run.font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                else:
+                    run.font.size = Pt(13)
+                    run.font.color.rgb = RGBColor(0x16, 0xA0, 0x85)
+            
+            i += 1
+            continue
+        
+        # 代码块处理
+        if line.startswith('```'):
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('```'):
+                code_lines.append(lines[i])
+                i += 1
+            i += 1  # 跳过结束的```
+            
+            # 添加代码块
+            if code_lines:
+                p = doc.add_paragraph()
+                p.paragraph_format.left_indent = Inches(0.3)
+                p.paragraph_format.right_indent = Inches(0.3)
+                p.paragraph_format.space_before = Pt(6)
+                p.paragraph_format.space_after = Pt(6)
+                
+                # 添加浅灰色背景
+                shading_elm = p._element.get_or_add_pPr()
+                from docx.oxml.ns import qn as oxml_qn
+                shading = docx.oxml.OxmlElement('shd')
+                shading.set(oxml_qn('w:fill'), 'F5F5F5')
+                shading.set(oxml_qn('w:val'), 'clear')
+                shading_elm.append(shading)
+                
+                run = p.add_run('\n'.join(code_lines))
+                run.font.name = 'Consolas'
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(0xD6, 0x33, 0x6C)
+                continue
+        
+        # 表格处理
+        if '|' in line and i + 1 < len(lines) and re.match(r'^[\s\|\-\:]+$', lines[i+1]):
+            # 解析Markdown表格
+            table_rows = []
+            while i < len(lines) and '|' in lines[i]:
+                row_text = lines[i].strip()
+                # 跳过分隔线
+                if re.match(r'^[\s\|\-\:]+$', row_text):
+                    i += 1
+                    continue
+                cells = [cell.strip() for cell in row_text.split('|') if cell.strip()]
+                if cells:
+                    table_rows.append(cells)
+                i += 1
+            
+            # 创建Word表格
+            if table_rows:
+                table = doc.add_table(rows=len(table_rows), cols=max(len(r) for r in table_rows))
+                table.style = 'Table Grid'
+                
+                for row_idx, row_data in enumerate(table_rows):
+                    for col_idx, cell_text in enumerate(row_data):
+                        if col_idx < len(table.rows[row_idx].cells):
+                            cell = table.rows[row_idx].cells[col_idx]
+                            cell.text = cell_text
+                            # 设置表头样式
+                            for paragraph in cell.paragraphs:
+                                for run in paragraph.runs:
+                                    run.font.name = '微软雅黑'
+                                    run.font.size = Pt(11)
+                                    run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                                    if row_idx == 0:
+                                        run.font.bold = True
+                                        run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+                                        # 表头背景色
+                                        shading_elm = cell._element.get_or_add_tcPr()
+                                        from docx.oxml.ns import qn as oxml_qn
+                                        shading = docx.oxml.OxmlElement('shd')
+                                        shading.set(oxml_qn('w:fill'), '2C3E50')
+                                        shading.set(oxml_qn('w:val'), 'clear')
+                                        shading_elm.append(shading)
+                                    else:
+                                        run.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+                continue
+        
+        # 普通段落（处理粗体、斜体等）
+        p = doc.add_paragraph()
+        
+        # 解析行内格式
+        remaining = line
+        while remaining:
+            # 粗体 **text**
+            bold_match = re.match(r'^\*\*(.+?)\*\*(.*)', remaining)
+            if bold_match:
+                run = p.add_run(bold_match.group(1))
+                run.bold = True
+                run.font.name = '微软雅黑'
+                run.font.size = Pt(12)
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                remaining = bold_match.group(2)
+                continue
+            
+            # 斜体 *text*
+            italic_match = re.match(r'^\*(.+?)\*(.*)', remaining)
+            if italic_match:
+                run = p.add_run(italic_match.group(1))
+                run.italic = True
+                run.font.name = '微软雅黑'
+                run.font.size = Pt(12)
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                remaining = italic_match.group(2)
+                continue
+            
+            # 行内代码 `text`
+            code_match = re.match(r'^`(.+?)`(.*)', remaining)
+            if code_match:
+                run = p.add_run(code_match.group(1))
+                run.font.name = 'Consolas'
+                run.font.size = Pt(11)
+                run.font.color.rgb = RGBColor(0xD6, 0x33, 0x6C)
+                remaining = code_match.group(2)
+                continue
+            
+            # 普通文本（取到下一个格式标记前）
+            text_match = re.match(r'^([^*`]+)(.*)', remaining)
+            if text_match:
+                run = p.add_run(text_match.group(1))
+                run.font.name = '微软雅黑'
+                run.font.size = Pt(12)
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                remaining = text_match.group(2)
+            else:
+                # 如果没有匹配，添加剩余内容并退出
+                run = p.add_run(remaining)
+                run.font.name = '微软雅黑'
+                run.font.size = Pt(12)
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+                break
+        
+        i += 1
+    
+    # 添加页眉页脚
+    section = doc.sections[0]
+    header = section.header
+    header_para = header.paragraphs[0]
+    header_para.text = f"{topic} - 多智能体学习系统"
+    header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for run in header_para.runs:
+        run.font.size = Pt(9)
+        run.font.color.rgb = RGBColor(0x8B, 0x94, 0x9E)
+    
+    footer = section.footer
+    footer_para = footer.paragraphs[0]
+    footer_para.text = f"生成时间：{time.strftime('%Y-%m-%d %H:%M')} | 仅供学习使用"
+    footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for run in footer_para.runs:
+        run.font.size = Pt(9)
+        run.font.color.rgb = RGBColor(0x8B, 0x94, 0x9E)
+    
+    # 保存到内存
+    doc_buffer = io.BytesIO()
+    doc.save(doc_buffer)
+    doc_buffer.seek(0)
+    
+    # 资源类型映射
+    res_type_map = {
+        'doc': '课程文档', 'map': '知识结构图', 'quiz': '练习题库',
+        'code': '代码案例', 'read': '拓展阅读'
+    }
+    label = res_type_map.get(res_type, res_type)
+    filename = f"{topic}_{label}.docx"
+    
+    return send_file(
+        doc_buffer,
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        as_attachment=True,
+        download_name=filename.encode('utf-8').decode('latin-1')
+    )
 
 @app.route("/api/resource/download", methods=["POST"])
 def api_resource_download():

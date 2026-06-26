@@ -6,78 +6,349 @@
 <title>登录 — 多智能体学习系统</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0B1320;min-height:100vh;display:flex}
-.brand{flex:1.3;display:flex;align-items:center;justify-content:center;padding:60px;background:radial-gradient(ellipse 90% 70% at 40% 10%,#1A2845 0%,#0B1320 65%);position:relative;overflow:hidden}
-.brand-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);background-size:40px 40px}
-.brand-inner{position:relative;max-width:480px}
-.logo-wrap{display:flex;align-items:center;gap:12px;margin-bottom:28px}
-.logo-icon{width:52px;height:52px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 30px rgba(59,130,246,.3)}
-.logo-text{font-size:15px;font-weight:700;color:#E2E8F0;line-height:1.2}
-.logo-sub{font-size:11px;color:#64748B;margin-top:2px;letter-spacing:.5px}
-.brand-title{font-size:2.8rem;font-weight:800;line-height:1.15;color:#E2E8F0;margin-bottom:14px}
-.brand-title em{font-style:normal;background:linear-gradient(135deg,#3B82F6 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.brand-desc{color:#94A3B8;font-size:.95rem;line-height:1.7;margin-bottom:28px}
-.feat-list{display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
-.feat{display:flex;align-items:center;gap:10px;font-size:13px;color:#CBD5E1;padding:8px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px}
-.feat-dot{width:6px;height:6px;border-radius:50%;background:#6366F1;flex-shrink:0}
-.agents{display:flex;gap:5px;flex-wrap:wrap}
-.agent-chip{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);color:#C4B5FD;font-size:10px;padding:3px 9px;border-radius:12px;font-weight:500}
-.brand-stats{display:flex;gap:10px;margin-bottom:24px}
-.stat{text-align:center;flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 8px}
-.stat-n{font-size:20px;font-weight:700;color:#3B82F6}
-.stat-l{font-size:10px;color:#64748B;margin-top:1px}
-.form-side{width:440px;flex-shrink:0;background:#0F1A2E;display:flex;align-items:center;justify-content:center;padding:50px 44px;border-left:1px solid #1E3A5F}
-.form-box{width:100%}
-.form-h{font-size:22px;font-weight:700;color:#E2E8F0;margin-bottom:4px}
-.form-sub{font-size:13px;color:#94A3B8;margin-bottom:24px}
-.role-tabs{display:flex;background:#141F35;border-radius:12px;padding:4px;gap:3px;margin-bottom:20px}
-.role-tab{flex:1;text-align:center;padding:9px;border-radius:9px;cursor:pointer;color:#94A3B8;font-size:13px;font-weight:500;transition:all .2s;user-select:none}
-.role-tab.active{background:#1E3A5F;color:#E2E8F0;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.hint{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);color:#93C5FD;font-size:11px;padding:8px 12px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:6px}
-.error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;font-size:12px;padding:9px 13px;border-radius:9px;margin-bottom:14px;display:none}
-.field{margin-bottom:14px}
-.field-label{font-size:11px;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px}
-.field-input{width:100%;height:44px;padding:0 14px;background:#141F35;border:1.5px solid #1E3A5F;border-radius:10px;color:#E2E8F0;font-size:14px;outline:none;transition:border-color .18s}
-.field-input:focus{border-color:#3B82F6;background:#1A2540}
-.field-input::placeholder{color:#475569}
-.login-btn{width:100%;height:46px;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .18s}
-.login-btn-user{background:linear-gradient(135deg,#3B82F6,#2563EB)}.login-btn-user:hover{background:linear-gradient(135deg,#2563EB,#1D4ED8);transform:translateY(-1px)}
-.login-btn-admin{background:linear-gradient(135deg,#8B5CF6,#7C3AED)}.login-btn-admin:hover{background:linear-gradient(135deg,#7C3AED,#6D28D9);transform:translateY(-1px)}
-.switch-link{margin-top:16px;text-align:center;font-size:12px;color:#64748B}
-.switch-link a{color:#3B82F6;cursor:pointer;text-decoration:none;font-weight:500}
-.btn-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+:root{--bg-primary:#0d1117;--bg-secondary:#161b22;--text-primary:#e6edf3;--text-secondary:#8b949e;--border-color:rgba(139,148,158,.1);--input-bg:rgba(139,148,158,.06);--input-border:rgba(139,148,158,.12);--accent:#58a6ff;--accent-bg:rgba(88,166,255,.15);--accent-border:rgba(88,166,255,.3);--overlay-start:rgba(13,17,23,.85);--overlay-mid:rgba(13,17,23,.6);--overlay-end:rgba(13,17,23,.4)}
+body.light-theme{--bg-primary:#f6f8fa;--bg-secondary:#ffffff;--text-primary:#1f2328;--text-secondary:#656d76;--border-color:rgba(31,35,40,.1);--input-bg:rgba(31,35,40,.04);--input-border:rgba(31,35,40,.12);--accent:#0969da;--accent-bg:rgba(9,105,218,.1);--accent-border:rgba(9,105,218,.25);--overlay-start:rgba(246,248,250,.85);--overlay-mid:rgba(246,248,250,.6);--overlay-end:rgba(246,248,250,.4)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);min-height:100vh;display:flex;color:var(--text-primary);overflow:hidden;transition:background .3s,color .3s}
+
+/* ===== LEFT ===== */
+.brand{flex:1;display:flex;flex-direction:column;justify-content:center;padding:80px 80px;position:relative;overflow:hidden}
+.brand-bg{position:absolute;inset:0;z-index:0}
+.brand-bg img{width:100%;height:100%;object-fit:cover;transition:opacity .8s ease}
+.brand-overlay{position:absolute;inset:0;background:linear-gradient(135deg,var(--overlay-start) 0%,var(--overlay-mid) 50%,var(--overlay-end) 100%);z-index:1}
+.brand-content{position:relative;z-index:2;max-width:480px}
+
+.brand-logo{display:flex;align-items:center;gap:12px;margin-bottom:56px}
+.brand-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#58a6ff,#3b82f6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;box-shadow:0 4px 12px rgba(88,166,255,.3)}
+.brand-logo-text{font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-secondary)}
+
+.brand-tagline{font-size:32px;font-weight:700;line-height:1.35;margin-bottom:16px;letter-spacing:-.5px}
+.brand-tagline em{font-style:normal;color:var(--accent)}
+
+.brand-desc{font-size:14px;line-height:1.8;color:var(--text-secondary);margin-bottom:32px}
+
+.brand-features{display:flex;flex-direction:column;gap:12px;margin-bottom:40px}
+.brand-feature{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-secondary)}
+.brand-feature-icon{width:20px;height:20px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);flex-shrink:0}
+
+.quote-text{font-size:22px;font-weight:600;line-height:1.6;margin-bottom:16px;font-style:italic;color:var(--text-primary)}
+.quote-author{font-size:13px;color:var(--text-secondary)}
+
+.slide-indicators{display:flex;gap:8px;margin-bottom:20px}
+.slide-indicator{width:24px;height:3px;border-radius:2px;background:var(--border-color);cursor:pointer;transition:all .3s}
+.slide-indicator.active{width:32px;background:var(--accent)}
+
+.mode-switch{display:flex;gap:8px}
+.mode-option{padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-secondary);transition:all .3s}
+.mode-option.active{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent)}
+
+.slide-nav-btns{position:absolute;right:64px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;z-index:5}
+.slide-nav-btn{width:40px;height:40px;border-radius:50%;background:var(--input-bg);border:1px solid var(--input-border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text-secondary);transition:all .3s}
+.slide-nav-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+
+.manage-area{position:absolute;top:32px;right:32px;z-index:10}
+.manage-btn{padding:8px 14px;border-radius:8px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:6px}
+.manage-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+
+.theme-toggle{position:absolute;bottom:32px;right:32px;width:40px;height:40px;border-radius:50%;background:var(--input-bg);border:1px solid var(--input-border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:all .3s;z-index:10}
+.theme-toggle:hover{background:var(--accent-bg);border-color:var(--accent-border);transform:scale(1.1)}
+
+.add-btn{padding:10px 20px;border-radius:8px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:8px}
+.add-btn:hover{background:var(--accent);color:#fff}
+
+.custom-slide-card{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);aspect-ratio:16/9}
+.custom-slide-card img{width:100%;height:100%;object-fit:cover;display:block}
+.custom-slide-card .delete-btn{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(248,81,73,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.custom-slide-card:hover .delete-btn{opacity:1}
+.custom-slide-card .use-btn{position:absolute;bottom:0;left:0;right:0;padding:6px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;text-align:center;cursor:pointer;opacity:0;transition:opacity .2s}
+.custom-slide-card:hover .use-btn{opacity:1}
+
+/* ===== RIGHT ===== */
+.form-side{width:420px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:64px 48px;background:var(--bg-secondary);border-left:1px solid var(--border-color)}
+
+.form-box{width:100%;max-width:320px}
+.form-header{margin-bottom:32px}
+.form-title{font-size:24px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.form-subtitle{font-size:13px;color:var(--text-secondary)}
+
+.role-selector{display:flex;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;padding:3px;margin-bottom:20px}
+.role-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;color:var(--text-secondary);transition:all .2s}
+.role-tab.active{background:var(--accent-bg);color:var(--accent)}
+
+.hint{display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:8px;font-size:12px;color:var(--text-secondary);margin-bottom:20px}
+
+.field{margin-bottom:16px}
+.field-label{display:block;font-size:12px;font-weight:500;margin-bottom:6px;color:var(--text-secondary)}
+.field-input{width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);font-size:14px;outline:none;transition:all .2s}
+.field-input:focus{border-color:var(--accent-border);background:var(--accent-bg);box-shadow:0 0 0 3px var(--accent-bg)}
+.field-input::placeholder{color:var(--text-secondary);opacity:.4}
+
+.login-btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px}
+.login-btn-user{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3)}
+.login-btn-user:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);box-shadow:0 6px 16px rgba(59,130,246,.4)}
+.login-btn-admin{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.3)}
+.login-btn-admin:hover{background:linear-gradient(135deg,#6d28d9,#5b21b6);box-shadow:0 6px 16px rgba(124,58,237,.4)}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+
+.form-footer{text-align:center;font-size:12px;color:var(--text-secondary);margin-top:16px}
+.form-footer a{color:var(--accent);cursor:pointer;text-decoration:none;transition:color .2s}
+.form-footer a:hover{color:var(--accent);text-decoration:underline;filter:brightness(1.2)}
+
+.error{display:none;padding:10px 12px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.15);border-radius:8px;font-size:12px;color:#f87171;margin-bottom:16px}
+
+.btn-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){body{flex-direction:column}.brand{flex:none;padding:40px 28px 32px}.form-side{width:100%;flex:none;padding:36px 28px;border-left:none;border-top:1px solid #1E3A5F}}
+
+@media(max-width:900px){
+  body{flex-direction:column}
+  .brand{padding:40px 32px;min-height:auto}
+  .brand-content{max-width:100%}
+  .brand-tagline{font-size:24px}
+  .slide-nav-btns{display:none}
+  .form-side{width:100%;border-left:none;border-top:1px solid var(--border-color)}
+  .manage-area{top:20px;right:20px}
+  .theme-toggle{bottom:20px;right:20px}
+}
 </style>
 </head>
 <body>
-<div class="brand"><div class="brand-grid"></div><div class="brand-inner">
-<div class="logo-wrap"><div class="logo-icon">🎓</div><div><div class="logo-text">Multi-Agent Learning System</div><div class="logo-sub">多智能体个性化学习平台</div></div></div>
-<h1 class="brand-title">让 AI <em>因材施教</em><br>每个学生都有专属方案</h1>
-<p class="brand-desc">六大 AI 智能体协同工作，结合对话式画像构建、多模态资源生成与智能路径规划，为高等教育带来真正个性化的学习体验。</p>
-<div class="brand-stats"><div class="stat"><div class="stat-n">6</div><div class="stat-l">AI 智能体</div></div><div class="stat"><div class="stat-n">7</div><div class="stat-l">资源类型</div></div><div class="stat"><div class="stat-n">6</div><div class="stat-l">画像维度</div></div><div class="stat"><div class="stat-n">100+</div><div class="stat-l">学科主题</div></div></div>
-<div class="feat-list"><div class="feat"><span class="feat-dot"></span>对话式 6 维度学习画像自动构建</div><div class="feat"><span class="feat-dot"></span>7 类多模态资源按需生成（文档·图解·视频）</div><div class="feat"><span class="feat-dot"></span>📷 拍照/上传搜题，AI 详细解答</div><div class="feat"><span class="feat-dot"></span>🎯 期末突击 / 考研深度 双模式</div><div class="feat"><span class="feat-dot"></span>全学科覆盖 · 100+ 学习主题</div></div>
-<div class="agents"><span class="agent-chip">🧩 Orchestrator</span><span class="agent-chip">👤 Profile</span><span class="agent-chip">🗺️ Planner</span><span class="agent-chip">📦 Resource</span><span class="agent-chip">💬 Tutor</span><span class="agent-chip">📊 Eval</span></div>
-</div></div>
+
+<div class="brand">
+  <div class="brand-bg"><img id="brand-image" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200" alt=""/></div>
+  <div class="brand-overlay"></div>
+  
+  <div class="brand-content">
+    <div class="brand-logo">
+      <div class="brand-logo-icon">✦</div>
+      <div class="brand-logo-text">Multi-Agent Learning</div>
+    </div>
+    <h1 class="brand-tagline" id="brand-tagline">让 AI <em>因材施教</em><br>每个学生都有专属方案</h1>
+    <p class="brand-desc" id="brand-desc">六大 AI 智能体协同工作，结合对话式画像构建、多模态资源生成与智能路径规划，为高等教育带来真正个性化的学习体验。</p>
+    <div class="brand-features" id="brand-features">
+      <div class="brand-feature"><div class="brand-feature-icon">✓</div>对话式 6 维度学习画像自动构建</div>
+      <div class="brand-feature"><div class="brand-feature-icon">✓</div>7 类多模态资源按需生成（文档·图解·视频）</div>
+      <div class="brand-feature"><div class="brand-feature-icon">✓</div>拍照/上传搜题，AI 详细解答</div>
+    </div>
+    <div class="slide-indicators" id="slide-indicators"></div>
+    <div class="mode-switch" id="mode-switch">
+      <div class="mode-option active" data-mode="features" onclick="switchMode('features')">产品特色</div>
+      <div class="mode-option" data-mode="quotes" onclick="switchMode('quotes')">名言励志</div>
+    </div>
+  </div>
+  
+  <div class="slide-nav-btns">
+    <div class="slide-nav-btn" onclick="prevSlide()">‹</div>
+    <div class="slide-nav-btn" onclick="nextSlide()">›</div>
+  </div>
+  
+  <div class="manage-area">
+    <button class="manage-btn" onclick="openManageModal()">🎨 管理背景</button>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" title="切换深浅色主题">
+    <span id="theme-icon">🌙</span>
+  </div>
+</div>
+
+<!-- 管理背景模态框 -->
+<div id="manage-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)closeManageModal()">
+  <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:700;color:var(--text-primary)">🎨 管理背景图片</div>
+      <button onclick="closeManageModal()" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px">✕</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <button class="add-btn" onclick="document.getElementById('upload-input').click()">➕ 添加背景</button>
+      <input type="file" id="upload-input" accept="image/*" multiple onchange="handleUpload(event)" style="display:none"/>
+    </div>
+    <div id="custom-slides-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
+    <div id="no-custom-bg" style="text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:14px">
+      <div style="font-size:32px;margin-bottom:8px;opacity:.4">🖼️</div>
+      <div>暂无自定义背景</div>
+      <div style="font-size:12px;margin-top:4px">点击上方"添加背景"上传你的图片</div>
+    </div>
+  </div>
+</div>
+
 <div class="form-side"><div class="form-box">
-<div class="form-h" id="form-title">欢迎登录</div><div class="form-sub">选择角色，开始使用</div>
-<div class="role-tabs"><div class="role-tab active" id="tab-user" onclick="switchRole('user')">👤 学生用户</div><div class="role-tab" id="tab-admin" onclick="switchRole('admin')">⚙️ 管理员</div></div>
-<div class="hint"><span>💡</span><span id="hint-text">默认账号：user1 / 123456</span></div>
+<div class="form-header">
+  <div class="form-title" id="form-title">欢迎回来</div>
+  <div class="form-subtitle">登录以继续你的学习之旅</div>
+</div>
+
+<div class="role-selector">
+  <div class="role-tab active" id="tab-user" onclick="switchRole('user')">👤 学生</div>
+  <div class="role-tab" id="tab-admin" onclick="switchRole('admin')">⚙️ 管理员</div>
+</div>
+
+<div class="hint" id="hint-box"><span>💡</span><span id="hint-text">user1 / 123456</span></div>
 <div class="error" id="err-box"></div>
+
 <div class="field"><label class="field-label">用户名</label><input class="field-input" id="f-username" placeholder="输入用户名" autocomplete="off"/></div>
 <div class="field"><label class="field-label">密码</label><input class="field-input" id="f-password" type="password" placeholder="输入密码"/></div>
-<button class="login-btn login-btn-user" id="login-btn" onclick="doLogin()">登录</button>
-<div class="switch-link" id="switch-link">管理员？<a onclick="switchRole('admin')">切换到管理员登录</a></div>
-<div class="switch-link" style="margin-top:4px">没有账号？<a onclick="showRegister()">立即注册</a></div>
+
+<button class="login-btn login-btn-user" id="login-btn" onclick="doLogin()">登 录</button>
+
+<div class="form-footer" id="switch-link">
+  <a onclick="switchRole('admin')">切换到管理员</a>
+</div>
+<div class="form-footer" style="margin-top:8px">
+  没有账号？<a onclick="showRegister()">立即注册</a>
+</div>
 </div></div>
+
 <script>
+const featuresSlides=[
+  {image:'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200',tagline:'让 AI <em>因材施教</em><br>每个学生都有专属方案',desc:'六大 AI 智能体协同工作，结合对话式画像构建、多模态资源生成与智能路径规划，为高等教育带来真正个性化的学习体验。',features:['对话式 6 维度学习画像自动构建','7 类多模态资源按需生成（文档·图解·视频）','拍照/上传搜题，AI 详细解答']},
+  {image:'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200',tagline:'拍照搜题<br><em>一秒解答</em>',desc:'上传题目图片，AI 自动识别并提供详细解答步骤，支持数学、物理、化学等多学科。',features:['OCR 文字识别，精准提取题目内容','AI 逐步解答，思路清晰易懂','支持多学科题目，覆盖全学段']},
+  {image:'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200',tagline:'智能答疑<br><em>因材施教</em>',desc:'14 个智能 Agent 协同工作，根据你的学习画像提供个性化辅导，让学习更高效。',features:['14 个智能 Agent 协同工作','基于学习画像的个性化辅导','流式输出，实时显示回答']},
+  {image:'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200',tagline:'资源生成<br><em>一键即得</em>',desc:'输入学习主题，一键生成文本总结、知识图解、教学视频等多模态学习资源。',features:['文本总结，重点难点一目了然','知识图解，可视化呈现知识脉络','教学视频，生动形象易于理解']}
+];
+const quotesSlides=[
+  {image:'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200',quote:'学而不思则罔，思而不学则殆',author:'—— 孔子'},
+  {image:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200',quote:'书山有路勤为径，学海无涯苦作舟',author:'—— 韩愈'},
+  {image:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200',quote:'千里之行，始于足下',author:'—— 老子'},
+  {image:'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',quote:'不积跬步，无以至千里；不积小流，无以成江海',author:'—— 荀子《劝学》'},
+  {image:'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200',quote:'业精于勤荒于嬉，行成于思毁于随',author:'—— 韩愈'},
+  {image:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200',quote:'路漫漫其修远兮，吾将上下而求索',author:'—— 屈原《离骚》'},
+  {image:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200',quote:'天行健，君子以自强不息',author:'—— 《周易》'},
+  {image:'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200',quote:'知之者不如好之者，好之者不如乐之者',author:'—— 孔子'},
+  {image:'https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?w=1200',quote:'三人行，必有我师焉',author:'—— 孔子'},
+  {image:'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200',quote:'学然后知不足，教然后知困',author:'—— 《礼记·学记》'},
+  {image:'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200',quote:'温故而知新，可以为师矣',author:'—— 孔子'},
+  {image:'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200',quote:'读书破万卷，下笔如有神',author:'—— 杜甫'},
+  {image:'https://images.unsplash.com/photo-1446034295857-c899f4c4e1c6?w=1200',quote:'黑发不知勤学早，白首方悔读书迟',author:'—— 颜真卿'},
+  {image:'https://images.unsplash.com/photo-1505144808419-1957a94ca61e?w=1200',quote:'宝剑锋从磨砺出，梅花香自苦寒来',author:'—— 《警世贤文》'},
+  {image:'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1200',quote:'少壮不努力，老大徒伤悲',author:'—— 《长歌行》'},
+  {image:'https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=1200',quote:'活到老，学到老',author:'—— 民间谚语'},
+  {image:'https://images.unsplash.com/photo-1500534314263-a834e60da793?w=1200',quote:'知识就是力量',author:'—— 培根'},
+  {image:'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=1200',quote:'吾生也有涯，而知也无涯',author:'—— 庄子'},
+  {image:'https://images.unsplash.com/photo-1504700610630-ac6edd918cb0?w=1200',quote:'博观而约取，厚积而薄发',author:'—— 苏轼'},
+  {image:'https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=1200',quote:'纸上得来终觉浅，绝知此事要躬行',author:'—— 陆游'}
+];
+
+let currentSlide=0,slideInterval,currentMode='features',customSlides=[];
+
+function initSlideshow(){
+  // 根据日期智能选择初始名言
+  const today=new Date();
+  const dayIndex=(today.getFullYear()*365+today.getMonth()*31+today.getDate())%quotesSlides.length;
+  if(currentMode==='quotes'){
+    currentSlide=dayIndex;
+  }
+  updateIndicators();
+  goToSlide(currentSlide);
+  startAutoPlay();
+}
+function updateIndicators(){
+  const data=currentMode==='features'?[...featuresSlides,...customSlides]:quotesSlides;
+  const ind=document.getElementById('slide-indicators');ind.innerHTML='';
+  data.forEach((_,i)=>{const d=document.createElement('div');d.className='slide-indicator'+(i===currentSlide?' active':'');d.onclick=()=>goToSlide(i);ind.appendChild(d);});
+}
+function goToSlide(index){
+  currentSlide=index;
+  const data=currentMode==='features'?[...featuresSlides,...customSlides]:quotesSlides;
+  const s=data[currentSlide];
+  document.getElementById('brand-image').src=s.image;
+  if(currentMode==='features'){
+    document.getElementById('brand-tagline').innerHTML=s.tagline;
+    document.getElementById('brand-desc').textContent=s.desc;
+    document.getElementById('brand-features').style.display='flex';
+    document.getElementById('brand-features').innerHTML=s.features.map(f=>`<div class="brand-feature"><div class="brand-feature-icon">✓</div>${f}</div>`).join('');
+  }else{
+    document.getElementById('brand-tagline').innerHTML='';
+    document.getElementById('brand-desc').innerHTML=`<div class="quote-text">"${s.quote}"</div><div class="quote-author">${s.author}</div>`;
+    document.getElementById('brand-features').style.display='none';
+  }
+  document.querySelectorAll('.slide-indicator').forEach((d,i)=>d.classList.toggle('active',i===currentSlide));
+  resetAutoPlay();
+}
+function nextSlide(){const d=currentMode==='features'?[...featuresSlides,...customSlides]:quotesSlides;goToSlide((currentSlide+1)%d.length);}
+function prevSlide(){const d=currentMode==='features'?[...featuresSlides,...customSlides]:quotesSlides;goToSlide((currentSlide-1+d.length)%d.length);}
+function startAutoPlay(){slideInterval=setInterval(nextSlide,5000);}
+function resetAutoPlay(){clearInterval(slideInterval);startAutoPlay();}
+function switchMode(mode){currentMode=mode;currentSlide=0;document.querySelectorAll('.mode-option').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));updateIndicators();goToSlide(0);}
+function handleUpload(event){
+  const files=event.target.files;if(!files.length)return;
+  Array.from(files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const newSlide={image:e.target.result,tagline:'自定义背景',desc:'用户上传的个性化背景',features:[]};
+      customSlides.push(newSlide);
+      renderCustomSlidesGrid();
+      goToSlide(featuresSlides.length+customSlides.length-1);
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value='';
+}
+
+function openManageModal(){
+  document.getElementById('manage-modal').style.display='flex';
+  renderCustomSlidesGrid();
+}
+
+function closeManageModal(){
+  document.getElementById('manage-modal').style.display='none';
+}
+
+function renderCustomSlidesGrid(){
+  const grid=document.getElementById('custom-slides-grid');
+  const noBg=document.getElementById('no-custom-bg');
+  if(customSlides.length===0){
+    grid.innerHTML='';
+    noBg.style.display='block';
+    return;
+  }
+  noBg.style.display='none';
+  grid.innerHTML=customSlides.map((s,i)=>`
+    <div class="custom-slide-card">
+      <img src="${s.image}" alt="自定义背景${i+1}"/>
+      <button class="delete-btn" onclick="deleteCustomSlide(${i})" title="删除">×</button>
+      <div class="use-btn" onclick="useCustomSlide(${i})">使用此背景</div>
+    </div>
+  `).join('');
+}
+
+function deleteCustomSlide(index){
+  if(!confirm('确认删除此背景图片？'))return;
+  customSlides.splice(index,1);
+  renderCustomSlidesGrid();
+  if(currentSlide>=featuresSlides.length+customSlides.length){
+    goToSlide(0);
+  }
+}
+
+function useCustomSlide(index){
+  goToSlide(featuresSlides.length+index);
+  closeManageModal();
+}
+
+function toggleTheme(){
+  const body=document.body;
+  const icon=document.getElementById('theme-icon');
+  const isDark=!body.classList.contains('light-theme');
+  body.classList.toggle('light-theme');
+  const nowLight=body.classList.contains('light-theme');
+  icon.textContent=nowLight?'☀️':'🌙';
+  localStorage.setItem('theme',nowLight?'light':'dark');
+}
+
+(function(){
+  const saved=localStorage.getItem('theme');
+  if(saved==='light'){
+    document.body.classList.add('light-theme');
+    document.getElementById('theme-icon').textContent='☀️';
+  }
+})();
+
 let role='user',isRegister=false;
-function switchRole(r){if(isRegister)return;role=r;const isAdmin=r==='admin';document.getElementById('tab-user').classList.toggle('active',!isAdmin);document.getElementById('tab-admin').classList.toggle('active',isAdmin);document.getElementById('hint-text').textContent=isAdmin?'默认账号：admin / admin123':'默认账号：user1 / 123456';document.getElementById('login-btn').className=isAdmin?'login-btn login-btn-admin':'login-btn login-btn-user';document.getElementById('switch-link').innerHTML=isAdmin?'学生用户？<a onclick="switchRole(\'user\')">切换到用户登录</a>':'管理员？<a onclick="switchRole(\'admin\')">切换到管理员登录</a>';document.getElementById('err-box').style.display='none';}
-function showRegister(){isRegister=true;document.getElementById('form-title').textContent='注册新账号';document.getElementById('login-btn').textContent='注 册';document.getElementById('login-btn').onclick=doRegister;document.getElementById('login-btn').className='login-btn login-btn-user';document.getElementById('switch-link').innerHTML='已有账号？<a onclick="showLogin()">返回登录</a>';document.getElementById('hint-text').textContent='创建账号后自动登录';document.querySelector('.role-tabs').style.opacity='0.5';document.getElementById('tab-admin').style.pointerEvents='none';document.getElementById('err-box').style.display='none';}
-function showLogin(){isRegister=false;document.getElementById('form-title').textContent='欢迎登录';document.getElementById('login-btn').textContent='登 录';document.getElementById('login-btn').onclick=doLogin;document.getElementById('login-btn').className='login-btn login-btn-user';switchRole('user');document.querySelector('.role-tabs').style.opacity='1';document.getElementById('tab-admin').style.pointerEvents='';document.getElementById('err-box').style.display='none';}
+function switchRole(r){if(isRegister)return;role=r;const a=r==='admin';document.getElementById('tab-user').classList.toggle('active',!a);document.getElementById('tab-admin').classList.toggle('active',a);document.getElementById('hint-text').textContent=a?'admin / admin123':'user1 / 123456';document.getElementById('login-btn').className=a?'login-btn login-btn-admin':'login-btn login-btn-user';document.getElementById('switch-link').innerHTML=a?'<a onclick="switchRole(\'user\')">切换到学生</a>':'<a onclick="switchRole(\'admin\')">切换到管理员</a>';document.getElementById('err-box').style.display='none';}
+function showRegister(){isRegister=true;document.getElementById('form-title').textContent='创建账号';document.querySelector('.form-subtitle').textContent='注册后自动登录';document.getElementById('login-btn').textContent='注 册';document.getElementById('login-btn').onclick=doRegister;document.getElementById('login-btn').className='login-btn login-btn-user';document.getElementById('switch-link').innerHTML='<a onclick="showLogin()">返回登录</a>';document.getElementById('hint-text').textContent='创建账号后自动登录';document.querySelector('.role-selector').style.opacity='0.4';document.getElementById('tab-admin').style.pointerEvents='none';document.getElementById('err-box').style.display='none';}
+function showLogin(){isRegister=false;document.getElementById('form-title').textContent='欢迎回来';document.querySelector('.form-subtitle').textContent='登录以继续你的学习之旅';document.getElementById('login-btn').textContent='登 录';document.getElementById('login-btn').onclick=doLogin;document.getElementById('login-btn').className='login-btn login-btn-user';switchRole('user');document.querySelector('.role-selector').style.opacity='1';document.getElementById('tab-admin').style.pointerEvents='';document.getElementById('err-box').style.display='none';}
 async function doLogin(){const u=document.getElementById('f-username').value.trim(),p=document.getElementById('f-password').value,err=document.getElementById('err-box'),btn=document.getElementById('login-btn');if(!u||!p){err.textContent='请输入用户名和密码';err.style.display='block';return;}btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span>验证中…';err.style.display='none';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role,username:u,password:p})});const d=await r.json();if(d.success)window.location.href=d.redirect;else{err.textContent=d.error||'登录失败';err.style.display='block';btn.disabled=false;btn.innerHTML='登 录';}}catch(e){err.textContent='网络错误';err.style.display='block';btn.disabled=false;btn.innerHTML='登 录';}}
 async function doRegister(){const u=document.getElementById('f-username').value.trim(),p=document.getElementById('f-password').value,err=document.getElementById('err-box'),btn=document.getElementById('login-btn');if(!u||!p){err.textContent='请填写用户名和密码';err.style.display='block';return;}if(u.length<2){err.textContent='用户名至少2个字符';err.style.display='block';return;}if(p.length<4){err.textContent='密码至少4个字符';err.style.display='block';return;}btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span>注册中…';err.style.display='none';try{const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(d.success)window.location.href=d.redirect;else{err.textContent=d.error||'注册失败';err.style.display='block';btn.disabled=false;btn.innerHTML='注 册';}}catch(e){err.textContent='网络错误';err.style.display='block';btn.disabled=false;btn.innerHTML='注 册';}}
 document.getElementById('f-password').addEventListener('keydown',e=>{if(e.key==='Enter')isRegister?doRegister():doLogin();});
+
+initSlideshow();
 </script>
 </body>
 </html>
